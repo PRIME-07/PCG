@@ -1,0 +1,3 @@
+[submodule "src/olmocr"]
+	path = src/olmocr
+	url = https://github.com/allenai/olmocr.git

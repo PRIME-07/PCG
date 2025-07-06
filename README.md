@@ -1,2 +1,0 @@
-# PCG
-Data Extraction tool
