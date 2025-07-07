@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "names": [
+      "John Doe"
+    ],
+    "dates": [
+      "2025-07-06"
+    ],
+    "addresses": [
+      "123 Main Street, Springfield, USA"
+    ],
+    "emails": [
+      "johndoe@example.com"
+    ]
+  },
+  "tables": [
+    {
+      "headers": [
+        "Book Title",
+        "Price"
+      ],
+      "rows": [
+        [
+          "Deep Learning with Python",
+          "$45"
+        ],
+        [
+          "Clean Code",
+          ""
+        ]
+      ]
+    }
+  ]
+}
