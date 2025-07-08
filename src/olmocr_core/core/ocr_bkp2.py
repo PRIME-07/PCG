@@ -42,15 +42,15 @@ def is_pdf_file(file_path):
 
 
 def is_image_file(file_path):
-    """Check if the file is an image based on file extension and magic bytes (PNG, JPG, JPEG only)."""
+    """Check if the file is an image based on file extension and magic bytes."""
     file_path = Path(file_path)
     
     # Check file extension
-    image_extensions = {'.png', '.jpg', '.jpeg'}
+    image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.webp'}
     if file_path.suffix.lower() in image_extensions:
         return True
     
-    # Check magic bytes for PNG, JPG, JPEG only
+    # Check magic bytes for common image formats
     try:
         with open(file_path, 'rb') as f:
             header = f.read(8)
@@ -59,6 +59,18 @@ def is_image_file(file_path):
                 return True
             # JPEG
             if header.startswith(b'\xff\xd8'):
+                return True
+            # GIF
+            if header.startswith(b'GIF87a') or header.startswith(b'GIF89a'):
+                return True
+            # BMP
+            if header.startswith(b'BM'):
+                return True
+            # TIFF
+            if header.startswith(b'II') or header.startswith(b'MM'):
+                return True
+            # WebP
+            if header.startswith(b'RIFF') and header[8:12] == b'WEBP':
                 return True
     except Exception:
         pass
@@ -269,12 +281,15 @@ Rules:
         return []
 
 
-def run_ocr(file_path, page_num=1, target_longest_image_dim=1024, target_anchor_text_len=4000, output_file=None):
-    """Run OCR on a file (PDF or image) and save the result to output_file (required)."""
-    if output_file is None:
-        raise ValueError("output_file must be specified for run_ocr.")
+def run_ocr(file_path, page_num=1, target_longest_image_dim=1024, target_anchor_text_len=4000, output_file="model_output.txt"):
+    """Run OCR on a file (PDF or image) and save the result."""
+    # Process the file to get image and anchor text
     image_base64, anchor_text = process_file(file_path, page_num, target_longest_image_dim, target_anchor_text_len)
+    
+    # Build the prompt
     prompt = build_finetuning_prompt(anchor_text)
+    
+    # Build the full prompt
     messages = [
         {
             "role": "user",
@@ -284,8 +299,11 @@ def run_ocr(file_path, page_num=1, target_longest_image_dim=1024, target_anchor_
             ],
         }
     ]
+    
+    # Apply the chat template and processor
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     main_image = Image.open(BytesIO(base64.b64decode(image_base64)))
+    
     inputs = processor(
         text=[text],
         images=[main_image],
@@ -293,6 +311,8 @@ def run_ocr(file_path, page_num=1, target_longest_image_dim=1024, target_anchor_
         return_tensors="pt",
     )
     inputs = {key: value.to(device) for (key, value) in inputs.items()}
+    
+    # Generate the output
     output = model.generate(
         **inputs,
         temperature=0.8,
@@ -300,15 +320,41 @@ def run_ocr(file_path, page_num=1, target_longest_image_dim=1024, target_anchor_
         num_return_sequences=1,
         do_sample=True,
     )
+    
+    # Decode the output
     prompt_length = inputs["input_ids"].shape[1]
     new_tokens = output[:, prompt_length:]
     text_output = processor.tokenizer.batch_decode(
         new_tokens, skip_special_tokens=True
     )
+    
+    # Save response
     with open(output_file, "w", encoding="UTF-8") as f:
         f.write(text_output[0])
-    # No return value
+    
+    # Print text output in console
+    print(text_output[0])
+    
+    return text_output[0]
 
 
-# Remove or comment out the __main__ block and any test file assignment, as this is now handled in main.py
+# Example usage
+if __name__ == "__main__":
+    test_file = "src/olmocr_core/test_ocr_files/book_order_letter.jpg"
+    # Run OCR on the file
+    ocr_text = run_ocr(test_file)
+    # Extract entities using Qwen2.5-VL-7B via Ollama
+    entities = call_ollama_entities_extraction(ocr_text)
+    # Extract tables using Qwen2.5-VL-7B via Ollama
+    tables = call_ollama_table_extraction(ocr_text)
+    # Output in the required format
+    output = {
+        "entities": entities,
+        "tables": tables
+    }
+    print("\nExtracted Output:")
+    print(json.dumps(output, indent=2, ensure_ascii=False))
+    # Save to file
+    with open("extracted_output.json", "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
 

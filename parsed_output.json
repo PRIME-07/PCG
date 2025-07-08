@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "names": ["John Doe"],
+    "emails": ["johndoe@example.com"],
+    "phone_numbers": ["+1-555-123-4567"],
+    "dates": ["2025-07-06"],
+    "organizations": [],
+    "amounts": ["$45"],
+    "addresses": ["123 Main Street, Springfield, USA"]
+  },
+  "tables": [
+    {
+      "headers": ["Book Title", "Price"],
+      "rows": [
+        ["Deep Learning with Python", "$45"],
+        ["Clean Code", "$45"]  // Assuming the price is the same for both books
+      ]
+    }
+  ],
+  "form_fields": {
+    "Name": "John Doe",
+    "Email": "johndoe@example.com",
+    "Phone": "+1-555-123-4567",
+    "Date": "2025-07-06",
+    "Address": "123 Main Street, Springfield, USA"
+  },
+  "document_structure": {
+    "sections": [
+      {
+        "heading": "1. Introduction",
+        "content": "This document outlines..."
+      },
+      {
+        "heading": "2. Order Details",
+        "table": {
+          "headers": ["Book Title", "Price"],
+          "rows": [
+            ["Deep Learning with Python", "$45"],
+            ["Clean Code", "$45"]
+          ]
+        }
+      }
+    ]
+  },
+  "full_text": "Name: John Doe\nDate: 2025-07-06\nEmail: johndoe@example.com\nAddress: 123 Main Street, Springfield, USA\nPhone: +1-555-123-4567\n\nDear Bookstore,\n\nI would like to place an order for the following books. Kindly find the details below.\n\n| Book Title                        | Price |\n|----------------------------------|-------|\n| Deep Learning with Python        | $45   |\n| Clean Code                       | $45   |\n"
+}
