@@ -6,8 +6,18 @@ import os
 import tempfile
 from ocr import run_ocr
 from inference import run_llm_extraction
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Enable CORS (allow all origins)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class LLMExtractRequest(BaseModel):
     ocr_text: str

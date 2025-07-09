@@ -296,7 +296,7 @@ def run_ocr(file_path, page_num=1, target_longest_image_dim=1024, target_anchor_
     output = model.generate(
         **inputs,
         temperature=0.8,
-        max_new_tokens=150,
+        max_new_tokens=300,
         num_return_sequences=1,
         do_sample=True,
     )

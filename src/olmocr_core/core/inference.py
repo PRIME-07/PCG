@@ -15,12 +15,14 @@ def run_llm_extraction(ocr_output_file, parsed_output_file):
             ocr_json = None
             ocr_text = ocr_content
     prompt = f"""
-You are an expert document parser. Analyze the following OCR text and extract the following in valid JSON:
+You are an expert document parser. Analyze ONLY the OCR text provided below 'Text to analyze:' and extract the following in valid JSON:
 
 - Entities such as: Names, emails, phone numbers, dates, organizations, amounts, addresses, etc.
 - Tables: Rows and columns of data in structured format
 - Form Fields: Field-value pairs like \"Name: John Doe\", checkboxes
 - Document Structure: Headings, paragraphs, bullet points, sectioned content
+
+Below is an EXAMPLE for illustration only. DO NOT extract data from this example.
 
 Format:
 {{
@@ -64,6 +66,10 @@ Format:
   }},
   "full_text": "{ocr_text}"
 }}
+
+--- END OF EXAMPLES ---
+
+Now, ONLY extract data from the following text. Ignore all previous examples.
 
 Text to analyze:
 {ocr_text}
