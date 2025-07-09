@@ -3,7 +3,8 @@ from ocr import run_ocr
 from inference import run_llm_extraction
 
 # User can set this variable to the desired file path
-DEFAULT_TEST_FILE = "src/olmocr_core/test_ocr_files/book_order_letter.pdf"
+# DEFAULT_TEST_FILE = "src/olmocr_core/test_ocr_files/book_order_letter.pdf"
+DEFAULT_TEST_FILE = "C:/Users/anujm/Downloads/transcript.pdf"
 
 def main():
     parser = argparse.ArgumentParser(description="Run OCR and LLM extraction on a document.")
@@ -23,3 +24,16 @@ def main():
 
 if __name__ == "__main__":
     main() 
+
+'''
+*Run commands*
+
+For uvicorn:
+    - cd src/olmocr_core/core
+    - uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+
+For Ngrok:
+    - ngrok http 8000
+
+'''
+

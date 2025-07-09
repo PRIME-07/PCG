@@ -1,46 +1,30 @@
 {
   "entities": {
-    "names": ["John Doe"],
-    "emails": ["johndoe@example.com"],
-    "phone_numbers": ["+1-555-123-4567"],
-    "dates": ["2025-07-06"],
+    "names": [],
+    "emails": [],
+    "phone_numbers": [],
+    "dates": [],
     "organizations": [],
-    "amounts": ["$45"],
-    "addresses": ["123 Main Street, Springfield, USA"]
+    "addresses": []
   },
   "tables": [
     {
-      "headers": ["Book Title", "Price"],
+      "headers": ["Course Code", "Course Name", "Credits", "Grade Point", "Grade"],
       "rows": [
-        ["Deep Learning with Python", "$45"],
-        ["Clean Code", "$45"]  // Assuming the price is the same for both books
+        ["22EEE101", "BASIC ELECTRICAL AND ELECTRONICS ENGINEERING", "3", "2.75", "B-"],
+        ["22CSP101", "EXPERIENTAL LEARNING PROJECT", "2", "2", "C-"],
+        ["22MAT102", "DISCRETE MATHEMATICS", "", "", ""]
       ]
     }
   ],
-  "form_fields": {
-    "Name": "John Doe",
-    "Email": "johndoe@example.com",
-    "Phone": "+1-555-123-4567",
-    "Date": "2025-07-06",
-    "Address": "123 Main Street, Springfield, USA"
-  },
+  "form_fields": {},
   "document_structure": {
     "sections": [
       {
-        "heading": "1. Introduction",
-        "content": "This document outlines..."
-      },
-      {
-        "heading": "2. Order Details",
-        "table": {
-          "headers": ["Book Title", "Price"],
-          "rows": [
-            ["Deep Learning with Python", "$45"],
-            ["Clean Code", "$45"]
-          ]
-        }
+        "heading": "Course Details",
+        "content": "This document outlines the course codes, names, credits, grade points, and grades for the courses listed below."
       }
     ]
   },
-  "full_text": "Name: John Doe\nDate: 2025-07-06\nEmail: johndoe@example.com\nAddress: 123 Main Street, Springfield, USA\nPhone: +1-555-123-4567\n\nDear Bookstore,\n\nI would like to place an order for the following books. Kindly find the details below.\n\n| Book Title                        | Price |\n|----------------------------------|-------|\n| Deep Learning with Python        | $45   |\n| Clean Code                       | $45   |\n"
+  "full_text": "{\"primary_language\":\"en\",\"is_rotation_valid\":true,\"rotation_correction\":0,\"is_table\":true,\"is_diagram\":false,\"natural_text\":\"| Course Code | Course Name                                      | Credits | Grade Point | Grade |\n|-------------|-------------------------------------------------|---------|-------------|-------|\n| 22EEE101    | BASIC ELECTRICAL AND ELECTRONICS ENGINEERING     | 3       | 2.75        | B-    |\n| 22CSP101    | EXPERIENTAL LEARNING PROJECT                    | 2       | 2           | C-    |\n| 22MAT102    | DISCRETE MATHEMATICS                            | \""
 }

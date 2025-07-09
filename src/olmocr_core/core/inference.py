@@ -4,14 +4,22 @@ import json
 def run_llm_extraction(ocr_output_file, parsed_output_file):
     OLLAMA_BASE_URL = "http://localhost:11434"
     OLLAMA_MODEL = "qwen2.5vl:7b"
+    # Read and parse the OCR output as JSON
     with open(ocr_output_file, "r", encoding="utf-8") as f:
-        ocr_text = f.read()
+        ocr_content = f.read()
+        try:
+            ocr_json = json.loads(ocr_content)
+            ocr_text = ocr_json.get("natural_text", "")
+        except Exception:
+            # Fallback: treat as plain text if not JSON
+            ocr_json = None
+            ocr_text = ocr_content
     prompt = f"""
 You are an expert document parser. Analyze the following OCR text and extract the following in valid JSON:
 
-- Entities: Names, emails, phone numbers, dates, organizations, amounts, addresses
+- Entities such as: Names, emails, phone numbers, dates, organizations, amounts, addresses, etc.
 - Tables: Rows and columns of data in structured format
-- Form Fields: Field-value pairs like "Name: John Doe", checkboxes
+- Form Fields: Field-value pairs like \"Name: John Doe\", checkboxes
 - Document Structure: Headings, paragraphs, bullet points, sectioned content
 
 Format:
@@ -22,7 +30,6 @@ Format:
     "phone_numbers": [],
     "dates": [],
     "organizations": [],
-    "amounts": [],
     "addresses": []
   }},
   "tables": [
@@ -55,7 +62,7 @@ Format:
       }}
     ]
   }},
-  "full_text": "<all natural_text extracted by olmocr here>"
+  "full_text": "{ocr_text}"
 }}
 
 Text to analyze:
