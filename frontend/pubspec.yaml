@@ -19,6 +19,7 @@ dependencies:
   logger: ^2.0.2
   universal_html: ^2.2.4
   image_picker: ^1.0.4
+  flutter_flow_chart: ^3.2.1
 
 dev_dependencies:
   flutter_test:
