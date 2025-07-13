@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:ocr_document_extractor/core/file_upload.dart';
 import 'package:ocr_document_extractor/pipeline.dart';
-import 'package:ocr_document_extractor/providers/ocr_provider.dart';
+import 'package:ocr_document_extractor/providers/ocr_repo.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'dart:typed_data';
 // Conditional imports for web
 import 'dart:html' as html if (dart.library.io) 'dart:io';
+
+import 'package:ocr_document_extractor/react_flow_pipeline.dart';
 
 class OcrPage extends ConsumerWidget {
   @override
@@ -29,7 +31,8 @@ class OcrPage extends ConsumerWidget {
                 color: Color(0xFF6366F1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.auto_fix_high_rounded, color: Colors.white, size: 18),
+              child: Icon(Icons.auto_fix_high_rounded,
+                  color: Colors.white, size: 18),
             ),
             SizedBox(width: 12),
             Text(
@@ -61,7 +64,8 @@ class OcrPage extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Color(0xFF2A2A35)),
                     ),
-                    child: Icon(Icons.refresh_rounded, color: Color(0xFF6366F1), size: 18),
+                    child: Icon(Icons.refresh_rounded,
+                        color: Color(0xFF6366F1), size: 18),
                   ),
                   onPressed: notifier.clear,
                   tooltip: 'Clear',
@@ -90,7 +94,14 @@ class OcrPage extends ConsumerWidget {
           padding: EdgeInsets.all(24),
           child: Column(
             children: [
-              // Pipeline visualization
+              // In your OCR page, replace PipelineCard with:
+              AnimatedContainer(
+                duration: Duration(milliseconds: 800),
+                curve: Curves.easeOutBack,
+                child: EnhancedPipelineCard(state: state),
+              ),
+
+              SizedBox(height: 32),
               AnimatedContainer(
                 duration: Duration(milliseconds: 800),
                 curve: Curves.easeOutBack,
@@ -106,10 +117,11 @@ class OcrPage extends ConsumerWidget {
                   hasFile: state.hasFile,
                   fileName: state.fileName,
                   onPickFile: () => _pickFile(ref),
-                  onImageCaptured: (bytes, fileName) => _handleImageCaptured(ref, bytes, fileName),
+                  onImageCaptured: (bytes, fileName) =>
+                      _handleImageCaptured(ref, bytes, fileName),
                 ),
               ),
-              
+
               // Process button
               AnimatedSize(
                 duration: Duration(milliseconds: 500),
@@ -168,8 +180,10 @@ class OcrPage extends ConsumerWidget {
                                               width: 32,
                                               height: 32,
                                               decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(0.2),
-                                                borderRadius: BorderRadius.circular(10),
+                                                color: Colors.white
+                                                    .withOpacity(0.2),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
                                               ),
                                               child: Icon(
                                                 Icons.rocket_launch_rounded,
@@ -278,7 +292,8 @@ class OcrPage extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: Color(0xFF1F1F28),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Color(0xFFEF4444).withOpacity(0.3)),
+                            border: Border.all(
+                                color: Color(0xFFEF4444).withOpacity(0.3)),
                           ),
                           child: Row(
                             children: [
@@ -353,9 +368,9 @@ class OcrPage extends ConsumerWidget {
 
       if (result != null && result.files.single.bytes != null) {
         ref.read(ocrProvider.notifier).selectFile(
-          result.files.single.bytes!,
-          result.files.single.name,
-        );
+              result.files.single.bytes!,
+              result.files.single.name,
+            );
       }
     } catch (e) {
       ScaffoldMessenger.of(ref.context).showSnackBar(
@@ -369,7 +384,8 @@ class OcrPage extends ConsumerWidget {
           ),
           backgroundColor: Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           margin: EdgeInsets.all(16),
         ),
       );
@@ -378,8 +394,10 @@ class OcrPage extends ConsumerWidget {
 
   void _handleImageCaptured(WidgetRef ref, List<int> bytes, String fileName) {
     try {
-      ref.read(ocrProvider.notifier).selectFile(Uint8List.fromList(bytes), fileName);
-      
+      ref
+          .read(ocrProvider.notifier)
+          .selectFile(Uint8List.fromList(bytes), fileName);
+
       // Show success message
       ScaffoldMessenger.of(ref.context).showSnackBar(
         SnackBar(
@@ -392,7 +410,8 @@ class OcrPage extends ConsumerWidget {
           ),
           backgroundColor: Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           margin: EdgeInsets.all(16),
         ),
       );
@@ -408,7 +427,8 @@ class OcrPage extends ConsumerWidget {
           ),
           backgroundColor: Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           margin: EdgeInsets.all(16),
         ),
       );
@@ -425,7 +445,8 @@ class ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entities = result['parsed_json']?['entities'] as Map<String, dynamic>?;
+    final entities =
+        result['parsed_json']?['entities'] as Map<String, dynamic>?;
     final tables = result['parsed_json']?['tables'] as List?;
 
     return Container(
@@ -853,7 +874,8 @@ class ResultCard extends StatelessWidget {
         ...tables.asMap().entries.map((entry) {
           return Container(
             margin: EdgeInsets.only(bottom: 20),
-            child: _buildTable(entry.value as Map<String, dynamic>, entry.key + 1),
+            child:
+                _buildTable(entry.value as Map<String, dynamic>, entry.key + 1),
           );
         }).toList(),
       ],
@@ -911,7 +933,8 @@ class ResultCard extends StatelessWidget {
                 if (kIsWeb)
                   IconButton(
                     onPressed: () => _exportTableToCsv(table, tableNumber),
-                    icon: Icon(Icons.download_rounded, color: Color(0xFFF59E0B)),
+                    icon:
+                        Icon(Icons.download_rounded, color: Color(0xFFF59E0B)),
                     style: IconButton.styleFrom(
                       backgroundColor: Color(0xFFF59E0B).withOpacity(0.1),
                       shape: RoundedRectangleBorder(
@@ -959,12 +982,15 @@ class ResultCard extends StatelessWidget {
                     final cellText = cell.toString();
                     return DataCell(
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: SelectableText(
                           cellText.isEmpty ? '-' : cellText,
                           style: TextStyle(
                             fontSize: 14,
-                            color: cellText.isEmpty ? Color(0xFF6B7280) : Color(0xFFE5E7EB),
+                            color: cellText.isEmpty
+                                ? Color(0xFF6B7280)
+                                : Color(0xFFE5E7EB),
                           ),
                         ),
                       ),
@@ -980,9 +1006,10 @@ class ResultCard extends StatelessWidget {
   }
 
   String _formatEntityName(String key) {
-    return key.split('_').map((word) => 
-      word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
+    return key
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 
   IconData _getEntityIcon(String fieldName) {
@@ -992,7 +1019,8 @@ class ResultCard extends StatelessWidget {
     if (field.contains('email')) return Icons.email_rounded;
     if (field.contains('address')) return Icons.location_on_rounded;
     if (field.contains('phone')) return Icons.phone_rounded;
-    if (field.contains('amount') || field.contains('price')) return Icons.attach_money_rounded;
+    if (field.contains('amount') || field.contains('price'))
+      return Icons.attach_money_rounded;
     return Icons.label_rounded;
   }
 
@@ -1035,20 +1063,22 @@ class ResultCard extends StatelessWidget {
     if (kIsWeb) {
       final headers = table['headers'] as List? ?? [];
       final rows = table['rows'] as List? ?? [];
-      
+
       String csv = headers.join(',') + '\n';
       for (var row in rows) {
         final escapedRow = (row as List).map((cell) {
           final cellStr = cell.toString();
           // Escape CSV special characters
-          if (cellStr.contains(',') || cellStr.contains('"') || cellStr.contains('\n')) {
+          if (cellStr.contains(',') ||
+              cellStr.contains('"') ||
+              cellStr.contains('\n')) {
             return '"${cellStr.replaceAll('"', '""')}"';
           }
           return cellStr;
         }).toList();
         csv += escapedRow.join(',') + '\n';
       }
-      
+
       final blob = html.Blob([csv], 'text/csv');
       final url = html.Url.createObjectUrlFromBlob(blob);
       final anchor = html.AnchorElement(href: url)
