@@ -1,4 +1,4 @@
-// lib/pages/ocr_page.dart
+/// lib/pages/ocr_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -14,13 +14,15 @@ import 'dart:html' as html if (dart.library.io) 'dart:io';
 import 'package:ocr_document_extractor/react_flow_pipeline.dart';
 
 class OcrPage extends ConsumerWidget {
+  const OcrPage({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(ocrProvider);
     final notifier = ref.read(ocrProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Color(0xFF0B0B0F),
+      backgroundColor: const Color(0xFF0B0B0F),
       appBar: AppBar(
         title: Row(
           children: [
@@ -28,14 +30,14 @@ class OcrPage extends ConsumerWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: Color(0xFF6366F1),
+                color: const Color(0xFF6366F1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.auto_fix_high_rounded,
+              child: const Icon(Icons.auto_fix_high_rounded,
                   color: Colors.white, size: 18),
             ),
-            SizedBox(width: 12),
-            Text(
+            const SizedBox(width: 12),
+            const Text(
               'OCR Document Extractor',
               style: TextStyle(
                 fontSize: 20,
@@ -45,26 +47,26 @@ class OcrPage extends ConsumerWidget {
             ),
           ],
         ),
-        backgroundColor: Color(0xFF0B0B0F),
+        backgroundColor: const Color(0xFF0B0B0F),
         elevation: 0,
         actions: [
           if (state.hasFile)
             AnimatedSlide(
-              offset: state.hasFile ? Offset.zero : Offset(1, 0),
-              duration: Duration(milliseconds: 400),
+              offset: state.hasFile ? Offset.zero : const Offset(1, 0),
+              duration: const Duration(milliseconds: 400),
               curve: Curves.easeOutBack,
               child: Container(
-                margin: EdgeInsets.only(right: 16),
+                margin: const EdgeInsets.only(right: 16),
                 child: IconButton(
                   icon: Container(
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: Color(0xFF1F1F28),
+                      color: const Color(0xFF1F1F28),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Color(0xFF2A2A35)),
+                      border: Border.all(color: const Color(0xFF2A2A35)),
                     ),
-                    child: Icon(Icons.refresh_rounded,
+                    child: const Icon(Icons.refresh_rounded,
                         color: Color(0xFF6366F1), size: 18),
                   ),
                   onPressed: notifier.clear,
@@ -75,13 +77,13 @@ class OcrPage extends ConsumerWidget {
         ],
       ),
       body: AnimatedSwitcher(
-        duration: Duration(milliseconds: 600),
+        duration: const Duration(milliseconds: 600),
         transitionBuilder: (Widget child, Animation<double> animation) {
           return FadeTransition(
             opacity: animation,
             child: SlideTransition(
               position: animation.drive(
-                Tween(begin: Offset(0, 0.1), end: Offset.zero).chain(
+                Tween(begin: const Offset(0, 0.1), end: Offset.zero).chain(
                   CurveTween(curve: Curves.easeOutCubic),
                 ),
               ),
@@ -91,27 +93,27 @@ class OcrPage extends ConsumerWidget {
         },
         child: SingleChildScrollView(
           key: ValueKey(state.hasFile),
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Column(
             children: [
               // In your OCR page, replace PipelineCard with:
               AnimatedContainer(
-                duration: Duration(milliseconds: 800),
+                duration: const Duration(milliseconds: 800),
                 curve: Curves.easeOutBack,
                 child: EnhancedPipelineCard(state: state),
               ),
 
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
               AnimatedContainer(
-                duration: Duration(milliseconds: 800),
+                duration: const Duration(milliseconds: 800),
                 curve: Curves.easeOutBack,
                 child: PipelineCard(state: state),
               ),
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
 
               // File upload
               AnimatedContainer(
-                duration: Duration(milliseconds: 600),
+                duration: const Duration(milliseconds: 600),
                 curve: Curves.easeOutCubic,
                 child: FileUploadCard(
                   hasFile: state.hasFile,
@@ -119,25 +121,30 @@ class OcrPage extends ConsumerWidget {
                   onPickFile: () => _pickFile(ref),
                   onImageCaptured: (bytes, fileName) =>
                       _handleImageCaptured(ref, bytes, fileName),
+                  // Wire up the new onFileDropped callback to the notifier
+                  onFileDropped: (bytes, fileName) {
+                    ref.read(ocrProvider.notifier)
+                       .selectFile(Uint8List.fromList(bytes), fileName);
+                  },
                 ),
               ),
 
               // Process button
               AnimatedSize(
-                duration: Duration(milliseconds: 500),
+                duration: const Duration(milliseconds: 500),
                 curve: Curves.easeOutCubic,
                 child: state.hasFile && !state.isLoading
                     ? Container(
-                        margin: EdgeInsets.only(top: 40),
+                        margin: const EdgeInsets.only(top: 40),
                         width: double.infinity,
                         child: AnimatedScale(
                           scale: 1.0,
-                          duration: Duration(milliseconds: 200),
+                          duration: const Duration(milliseconds: 200),
                           child: Container(
                             height: 64,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
-                              gradient: LinearGradient(
+                              gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
@@ -147,15 +154,15 @@ class OcrPage extends ConsumerWidget {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Color(0xFF6366F1).withOpacity(0.4),
+                                  color: const Color(0xFF6366F1).withOpacity(0.4),
                                   blurRadius: 24,
-                                  offset: Offset(0, 12),
+                                  offset: const Offset(0, 12),
                                   spreadRadius: 2,
                                 ),
                                 BoxShadow(
-                                  color: Color(0xFF8B5CF6).withOpacity(0.2),
+                                  color: const Color(0xFF8B5CF6).withOpacity(0.2),
                                   blurRadius: 40,
-                                  offset: Offset(0, 20),
+                                  offset: const Offset(0, 20),
                                 ),
                               ],
                             ),
@@ -165,14 +172,14 @@ class OcrPage extends ConsumerWidget {
                                 onTap: notifier.processFile,
                                 borderRadius: BorderRadius.circular(20),
                                 child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 32),
+                                  padding: const EdgeInsets.symmetric(horizontal: 32),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       // Animated icon
                                       TweenAnimationBuilder<double>(
                                         tween: Tween(begin: 0.0, end: 1.0),
-                                        duration: Duration(milliseconds: 800),
+                                        duration: const Duration(milliseconds: 800),
                                         builder: (context, value, child) {
                                           return Transform.scale(
                                             scale: 0.8 + (0.2 * value),
@@ -185,7 +192,7 @@ class OcrPage extends ConsumerWidget {
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                               ),
-                                              child: Icon(
+                                              child: const Icon(
                                                 Icons.rocket_launch_rounded,
                                                 color: Colors.white,
                                                 size: 18,
@@ -194,9 +201,9 @@ class OcrPage extends ConsumerWidget {
                                           );
                                         },
                                       ),
-                                      SizedBox(width: 16),
+                                      const SizedBox(width: 16),
                                       // Button text
-                                      Text(
+                                      const Text(
                                         'Process Document',
                                         style: TextStyle(
                                           fontSize: 18,
@@ -205,9 +212,9 @@ class OcrPage extends ConsumerWidget {
                                           letterSpacing: 0.3,
                                         ),
                                       ),
-                                      SizedBox(width: 8),
+                                      const SizedBox(width: 8),
                                       // Arrow icon
-                                      Icon(
+                                      const Icon(
                                         Icons.arrow_forward_rounded,
                                         color: Colors.white,
                                         size: 20,
@@ -220,26 +227,26 @@ class OcrPage extends ConsumerWidget {
                           ),
                         ),
                       )
-                    : SizedBox.shrink(),
+                    : const SizedBox.shrink(),
               ),
 
               // Loading indicator
               AnimatedSize(
-                duration: Duration(milliseconds: 400),
+                duration: const Duration(milliseconds: 400),
                 child: state.isLoading
                     ? Container(
-                        margin: EdgeInsets.only(top: 40),
+                        margin: const EdgeInsets.only(top: 40),
                         child: Column(
                           children: [
                             Container(
                               width: 80,
                               height: 80,
                               decoration: BoxDecoration(
-                                color: Color(0xFF1F1F28),
+                                color: const Color(0xFF1F1F28),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Color(0xFF2A2A35)),
+                                border: Border.all(color: const Color(0xFF2A2A35)),
                               ),
-                              child: Stack(
+                              child: const Stack(
                                 alignment: Alignment.center,
                                 children: [
                                   SizedBox(
@@ -258,8 +265,8 @@ class OcrPage extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            SizedBox(height: 20),
-                            Text(
+                            const SizedBox(height: 20),
+                            const Text(
                               'Processing document...',
                               style: TextStyle(
                                 color: Color(0xFF9CA3AF),
@@ -267,8 +274,8 @@ class OcrPage extends ConsumerWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            SizedBox(height: 8),
-                            Text(
+                            const SizedBox(height: 8),
+                            const Text(
                               'This may take a few moments',
                               style: TextStyle(
                                 color: Color(0xFF6B7280),
@@ -278,22 +285,22 @@ class OcrPage extends ConsumerWidget {
                           ],
                         ),
                       )
-                    : SizedBox.shrink(),
+                    : const SizedBox.shrink(),
               ),
 
               // Error display
               AnimatedSize(
-                duration: Duration(milliseconds: 400),
+                duration: const Duration(milliseconds: 400),
                 child: state.hasError
                     ? Container(
-                        margin: EdgeInsets.only(top: 32),
+                        margin: const EdgeInsets.only(top: 32),
                         child: Container(
-                          padding: EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Color(0xFF1F1F28),
+                            color: const Color(0xFF1F1F28),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: Color(0xFFEF4444).withOpacity(0.3)),
+                                color: const Color(0xFFEF4444).withOpacity(0.3)),
                           ),
                           child: Row(
                             children: [
@@ -301,21 +308,21 @@ class OcrPage extends ConsumerWidget {
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: Color(0xFFEF4444).withOpacity(0.1),
+                                  color: const Color(0xFFEF4444).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Icon(
+                                child: const Icon(
                                   Icons.error_outline_rounded,
                                   color: Color(0xFFEF4444),
                                   size: 20,
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    const Text(
                                       'Processing Error',
                                       style: TextStyle(
                                         color: Color(0xFFEF4444),
@@ -323,10 +330,10 @@ class OcrPage extends ConsumerWidget {
                                         fontSize: 16,
                                       ),
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     Text(
                                       state.error!,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Color(0xFF9CA3AF),
                                         fontSize: 14,
                                       ),
@@ -338,18 +345,18 @@ class OcrPage extends ConsumerWidget {
                           ),
                         ),
                       )
-                    : SizedBox.shrink(),
+                    : const SizedBox.shrink(),
               ),
 
               // Results
               AnimatedSize(
-                duration: Duration(milliseconds: 600),
+                duration: const Duration(milliseconds: 600),
                 child: state.hasResult
                     ? Container(
-                        margin: EdgeInsets.only(top: 32),
+                        margin: const EdgeInsets.only(top: 32),
                         child: ResultCard(result: state.result!),
                       )
-                    : SizedBox.shrink(),
+                    : const SizedBox.shrink(),
               ),
             ],
           ),
@@ -377,16 +384,16 @@ class OcrPage extends ConsumerWidget {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error_outline_rounded, color: Colors.white),
-              SizedBox(width: 12),
+              const Icon(Icons.error_outline_rounded, color: Colors.white),
+              const SizedBox(width: 12),
               Text('Error: ${e.toString()}'),
             ],
           ),
-          backgroundColor: Color(0xFFEF4444),
+          backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: EdgeInsets.all(16),
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -401,18 +408,18 @@ class OcrPage extends ConsumerWidget {
       // Show success message
       ScaffoldMessenger.of(ref.context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
               Icon(Icons.camera_alt_rounded, color: Colors.white),
               SizedBox(width: 12),
               Text('Photo captured successfully!'),
             ],
           ),
-          backgroundColor: Color(0xFF10B981),
+          backgroundColor: const Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: EdgeInsets.all(16),
+          margin: const EdgeInsets.all(16),
         ),
       );
     } catch (e) {
@@ -420,16 +427,16 @@ class OcrPage extends ConsumerWidget {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error_outline_rounded, color: Colors.white),
-              SizedBox(width: 12),
+              const Icon(Icons.error_outline_rounded, color: Colors.white),
+              const SizedBox(width: 12),
               Text('Error processing photo: ${e.toString()}'),
             ],
           ),
-          backgroundColor: Color(0xFFEF4444),
+          backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: EdgeInsets.all(16),
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
