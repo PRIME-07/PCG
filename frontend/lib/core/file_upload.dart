@@ -2,20 +2,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
-import 'dart:html' as html;
 import 'dart:io';
+
+// Web-specific imports
+import 'dart:html' as html;
+import 'dart:ui_web' as ui;
+import 'dart:typed_data';
 
 class FileUploadCard extends StatefulWidget {
   final bool hasFile;
   final String? fileName;
   final VoidCallback onPickFile;
   final Function(List<int> bytes, String fileName)? onImageCaptured;
+  // New callback for when a file is dropped on the web
+  final Function(List<int> bytes, String fileName)? onFileDropped;
 
   const FileUploadCard({
+    super.key,
     required this.hasFile,
     this.fileName,
     required this.onPickFile,
     this.onImageCaptured,
+    this.onFileDropped, // Added to constructor
   });
 
   @override
@@ -31,16 +39,20 @@ class _FileUploadCardState extends State<FileUploadCard>
   late Animation<double> _scaleAnimation;
   final ImagePicker _picker = ImagePicker();
 
+  // A unique key for the platform view
+  final String _viewType = 'file-upload-drag-drop-area';
+
   @override
   void initState() {
     super.initState();
+
     _pulseController = AnimationController(
-      duration: Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
-    )..repeat();
+    )..repeat(reverse: true);
     
     _scaleController = AnimationController(
-      duration: Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 200),
       vsync: this,
     );
     
@@ -59,53 +71,85 @@ class _FileUploadCardState extends State<FileUploadCard>
       parent: _scaleController,
       curve: Curves.easeOutCubic,
     ));
+
+    // Register the platform view factory for web
+    if (kIsWeb) {
+      _registerViewFactory();
+    }
   }
+
+  void _registerViewFactory() {
+    // ignore: undefined_prefixed_name
+    ui.platformViewRegistry.registerViewFactory(
+      _viewType,
+      (int viewId) {
+        final html.DivElement element = html.DivElement()
+          ..style.width = '100%'
+          ..style.height = '100%';
+
+        // Prevent default browser behavior for drag-and-drop
+        element.onDragOver.listen((html.MouseEvent event) {
+          event.preventDefault();
+          if (!_isDragOver) {
+            setState(() {
+              _isDragOver = true;
+            });
+          }
+        });
+
+        element.onDragLeave.listen((html.MouseEvent event) {
+          event.preventDefault();
+          if (_isDragOver) {
+            setState(() {
+              _isDragOver = false;
+            });
+          }
+        });
+
+        // Handle the file drop
+        element.onDrop.listen((html.MouseEvent event) {
+          event.preventDefault();
+          setState(() {
+            _isDragOver = false;
+          });
+
+          final files = event.dataTransfer?.files;
+          if (files != null && files.isNotEmpty) {
+            final file = files.first;
+            final allowedTypes = ['pdf', 'jpg', 'jpeg', 'png'];
+            final extension = file.name.split('.').last.toLowerCase();
+            
+            if (allowedTypes.contains(extension)) {
+              final reader = html.FileReader();
+              reader.readAsArrayBuffer(file);
+              reader.onLoadEnd.listen((e) {
+                if (widget.onFileDropped != null) {
+                  final bytes = reader.result as Uint8List;
+                  widget.onFileDropped!(bytes, file.name);
+                }
+              });
+            } else {
+               ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Unsupported file type: $extension'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        });
+
+        return element;
+      },
+    );
+  }
+
 
   @override
   void dispose() {
     _pulseController.dispose();
     _scaleController.dispose();
     super.dispose();
-  }
-
-  void _handleDragEnter() {
-    setState(() {
-      _isDragOver = true;
-    });
-  }
-
-  void _handleDragLeave() {
-    setState(() {
-      _isDragOver = false;
-    });
-  }
-
-  void _handleDragOver(dynamic event) {
-    if (kIsWeb) {
-      event.preventDefault();
-    }
-  }
-
-  void _handleDrop(dynamic event) {
-    if (kIsWeb) {
-      event.preventDefault();
-      setState(() {
-        _isDragOver = false;
-      });
-
-      // Handle file drop for web
-      final files = event.dataTransfer?.files;
-      if (files != null && files.isNotEmpty) {
-        final file = files.first;
-        final allowedTypes = ['pdf', 'jpg', 'jpeg', 'png'];
-        final extension = file.name.split('.').last.toLowerCase();
-        
-        if (allowedTypes.contains(extension)) {
-          // Handle file upload logic here
-          widget.onPickFile();
-        }
-      }
-    }
   }
 
   Future<void> _takePicture() async {
@@ -128,24 +172,26 @@ class _FileUploadCardState extends State<FileUploadCard>
       }
     } catch (e) {
       // Handle camera error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Camera error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Camera error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   void _showUploadOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Color(0xFF1F1F28),
-      shape: RoundedRectangleBorder(
+      backgroundColor: const Color(0xFF1F1F28),
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Container(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -154,12 +200,12 @@ class _FileUploadCardState extends State<FileUploadCard>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Color(0xFF2A2A35),
+                color: const Color(0xFF2A2A35),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            SizedBox(height: 24),
-            Text(
+            const SizedBox(height: 24),
+            const Text(
               'Choose Upload Method',
               style: TextStyle(
                 fontSize: 20,
@@ -167,79 +213,77 @@ class _FileUploadCardState extends State<FileUploadCard>
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             // Camera option
             if (!kIsWeb)
-              Container(
+              SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pop(context);
                     _takePicture();
                   },
-                  icon: Icon(Icons.camera_alt_rounded, size: 20),
-                  label: Text(
+                  icon: const Icon(Icons.camera_alt_rounded, size: 20),
+                  label: const Text(
                     'Take Photo',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF6366F1),
+                    backgroundColor: const Color(0xFF6366F1),
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
               ),
-            if (!kIsWeb) SizedBox(height: 12),
+            if (!kIsWeb) const SizedBox(height: 12),
             // Gallery option
-            Container(
+            SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
                   widget.onPickFile();
                 },
-                icon: Icon(Icons.photo_library_rounded, size: 20),
-                label: Text(
+                icon: const Icon(Icons.photo_library_rounded, size: 20),
+                label: const Text(
                   'Choose from Gallery',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF1F1F28),
+                  backgroundColor: const Color(0xFF1F1F28),
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Color(0xFF2A2A35)),
+                    side: const BorderSide(color: Color(0xFF2A2A35)),
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF1F1F28),
+        color: const Color(0xFF1F1F28),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Color(0xFF2A2A35)),
+        border: Border.all(color: const Color(0xFF2A2A35)),
       ),
       child: Column(
         children: [
           // Header
           Container(
-            padding: EdgeInsets.all(24),
-            decoration: BoxDecoration(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
               color: Color(0xFF252530),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(20),
@@ -252,17 +296,17 @@ class _FileUploadCardState extends State<FileUploadCard>
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Color(0xFF8B5CF6).withOpacity(0.1),
+                    color: const Color(0xFF8B5CF6).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.upload_file_rounded,
                     color: Color(0xFF8B5CF6),
                     size: 24,
                   ),
                 ),
-                SizedBox(width: 16),
-                Column(
+                const SizedBox(width: 16),
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -289,7 +333,7 @@ class _FileUploadCardState extends State<FileUploadCard>
           
           // Upload area
           Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: widget.hasFile ? _buildFileSelected() : _buildUploadArea(),
           ),
         ],
@@ -312,34 +356,32 @@ class _FileUploadCardState extends State<FileUploadCard>
       },
       child: AnimatedBuilder(
         animation: _scaleAnimation,
-        child: kIsWeb 
-          ? _buildWebDragDropArea()
-          : Container(
-              width: double.infinity,
-              height: 200,
-            ),
         builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: AnimatedContainer(
-              duration: Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 300),
               width: double.infinity,
               height: 200,
               decoration: BoxDecoration(
                 border: Border.all(
                   color: _isDragOver 
-                      ? Color(0xFF8B5CF6) 
-                      : Color(0xFF2A2A35),
+                      ? const Color(0xFF8B5CF6) 
+                      : const Color(0xFF2A2A35),
                   width: 2,
                   style: BorderStyle.solid,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 color: _isDragOver 
-                    ? Color(0xFF8B5CF6).withOpacity(0.05) 
-                    : Color(0xFF0B0B0F),
+                    ? const Color(0xFF8B5CF6).withOpacity(0.05) 
+                    : const Color(0xFF0B0B0F),
               ),
               child: Stack(
                 children: [
+                  // This is now the container for the HtmlElementView on web
+                  if (kIsWeb)
+                    HtmlElementView(viewType: _viewType),
+
                   // Animated background
                   if (!_isDragOver)
                     AnimatedBuilder(
@@ -350,68 +392,70 @@ class _FileUploadCardState extends State<FileUploadCard>
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              color: Color(0xFF8B5CF6).withOpacity(0.02),
+                              color: const Color(0xFF8B5CF6).withOpacity(0.02),
                             ),
                           ),
                         );
                       },
                     ),
                   
-                  // Content
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedContainer(
-                          duration: Duration(milliseconds: 300),
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: _isDragOver 
-                                ? Color(0xFF8B5CF6).withOpacity(0.2)
-                                : Color(0xFF1F1F28),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
+                  // Content (visuals only)
+                  IgnorePointer(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
                               color: _isDragOver 
-                                  ? Color(0xFF8B5CF6)
-                                  : Color(0xFF2A2A35),
+                                  ? const Color(0xFF8B5CF6).withOpacity(0.2)
+                                  : const Color(0xFF1F1F28),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: _isDragOver 
+                                    ? const Color(0xFF8B5CF6)
+                                    : const Color(0xFF2A2A35),
+                              ),
+                            ),
+                            child: Icon(
+                              _isDragOver 
+                                  ? Icons.file_download_rounded
+                                  : Icons.cloud_upload_rounded,
+                              size: 36,
+                              color: _isDragOver 
+                                  ? const Color(0xFF8B5CF6)
+                                  : const Color(0xFF6B7280),
                             ),
                           ),
-                          child: Icon(
-                            _isDragOver 
-                                ? Icons.file_download_rounded
-                                : Icons.cloud_upload_rounded,
-                            size: 36,
-                            color: _isDragOver 
-                                ? Color(0xFF8B5CF6)
-                                : Color(0xFF6B7280),
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        Text(
-                          _isDragOver 
-                              ? 'Drop your file here'
-                              : kIsWeb 
-                                  ? 'Drag & drop or click to upload'
-                                  : 'Tap to upload or take photo',
-                          style: TextStyle(
-                            color: _isDragOver 
-                                ? Color(0xFF8B5CF6)
-                                : Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        if (!_isDragOver)
+                          const SizedBox(height: 20),
                           Text(
-                            'Maximum file size: 10MB',
+                            _isDragOver 
+                                ? 'Drop your file here'
+                                : kIsWeb 
+                                    ? 'Drag & drop or click to upload'
+                                    : 'Tap to upload or take photo',
                             style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF9CA3AF),
+                              color: _isDragOver 
+                                  ? const Color(0xFF8B5CF6)
+                                  : Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
                             ),
                           ),
-                      ],
+                          const SizedBox(height: 8),
+                          if (!_isDragOver)
+                            const Text(
+                              'Maximum file size: 10MB',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF9CA3AF),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -425,15 +469,15 @@ class _FileUploadCardState extends State<FileUploadCard>
 
   Widget _buildFileSelected() {
     return AnimatedContainer(
-      duration: Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500),
       curve: Curves.easeOutBack,
       child: Container(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Color(0xFF10B981).withOpacity(0.1),
+          color: const Color(0xFF10B981).withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Color(0xFF10B981).withOpacity(0.3),
+            color: const Color(0xFF10B981).withOpacity(0.3),
             width: 2,
           ),
         ),
@@ -443,21 +487,21 @@ class _FileUploadCardState extends State<FileUploadCard>
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: Color(0xFF10B981).withOpacity(0.2),
+                color: const Color(0xFF10B981).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 _getFileIcon(widget.fileName!),
-                color: Color(0xFF10B981),
+                color: const Color(0xFF10B981),
                 size: 28,
               ),
             ),
-            SizedBox(width: 20),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     children: [
                       Icon(
                         Icons.check_circle_rounded,
@@ -475,18 +519,18 @@ class _FileUploadCardState extends State<FileUploadCard>
                       ),
                     ],
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
                     widget.fileName!,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 18,
                       color: Colors.white,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 4),
+                  const Text(
                     'Ready to process',
                     style: TextStyle(
                       color: Color(0xFF9CA3AF),
@@ -500,12 +544,12 @@ class _FileUploadCardState extends State<FileUploadCard>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Color(0xFF10B981).withOpacity(0.1),
+                color: const Color(0xFF10B981).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: IconButton(
                 onPressed: widget.onPickFile,
-                icon: Icon(
+                icon: const Icon(
                   Icons.edit_rounded,
                   color: Color(0xFF10B981),
                   size: 18,
@@ -518,20 +562,7 @@ class _FileUploadCardState extends State<FileUploadCard>
       ),
     );
   }
-
-  Widget _buildWebDragDropArea() {
-    return Container(
-      width: double.infinity,
-      height: 200,
-      child: HtmlElementView(
-        viewType: 'drag-drop-area',
-        onPlatformViewCreated: (int id) {
-          // The HTML element will be created by the platform view
-        },
-      ),
-    );
-  }
-
+  
   IconData _getFileIcon(String fileName) {
     final extension = fileName.split('.').last.toLowerCase();
     switch (extension) {
